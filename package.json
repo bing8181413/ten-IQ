@@ -1,0 +1,113 @@
+{
+  "name": "foretell-agent-starter",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Agent-governed prediction-market frontend starter with a Polymarket-inspired visual language.",
+  "packageManager": "pnpm@10.15.1",
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=10.15.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && vite build --mode demo",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test --grep-invert @visual",
+    "test:visual": "playwright test --grep @visual",
+    "test:visual:update": "playwright test --grep @visual --update-snapshots",
+    "storybook": "storybook dev -p 6006",
+    "build:storybook": "storybook build --output-dir storybook-static",
+    "design:check": "node scripts/verify-design-contract.mjs",
+    "agent:new": "node scripts/agent-workflow.mjs start",
+    "agent:check": "node scripts/agent-workflow.mjs check",
+    "agent:close": "node scripts/agent-workflow.mjs close",
+    "quality": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:run && pnpm run design:check && pnpm run build",
+    "quality:full": "pnpm run quality && pnpm run build:storybook && pnpm run test:e2e",
+    "prepare": "node scripts/prepare.mjs"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "1.1.17",
+    "@radix-ui/react-dropdown-menu": "2.1.18",
+    "@radix-ui/react-tabs": "1.1.15",
+    "@radix-ui/react-tooltip": "1.2.10",
+    "@remotion/player": "^4.0.490",
+    "@tanstack/react-query": "5.101.1",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.21.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-router-dom": "7.18.0",
+    "remotion": "^4.0.490",
+    "tailwind-merge": "3.6.0",
+    "zod": "4.4.3",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.1.0",
+    "@commitlint/config-conventional": "21.1.0",
+    "@eslint/js": "9.39.4",
+    "@playwright/test": "1.61.0",
+    "@storybook/addon-a11y": "10.4.6",
+    "@storybook/addon-docs": "10.4.6",
+    "@storybook/react-vite": "10.4.6",
+    "@tailwindcss/vite": "4.3.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "26.0.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "@vitest/coverage-v8": "4.1.9",
+    "axe-playwright": "2.2.2",
+    "eslint": "9.39.4",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "globals": "17.7.0",
+    "husky": "9.1.7",
+    "jsdom": "29.1.1",
+    "lint-staged": "16.2.7",
+    "msw": "2.14.6",
+    "prettier": "3.8.4",
+    "prettier-plugin-tailwindcss": "0.8.0",
+    "storybook": "10.4.6",
+    "tailwindcss": "4.3.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.62.0",
+    "vite": "8.1.0",
+    "vitest": "4.1.9"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw"
+    ]
+  }
+}

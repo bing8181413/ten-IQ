@@ -1,0 +1,1 @@
+Follow `AGENTS.md`. Preserve the probability-market visual language, use semantic tokens, validate API data with Zod, keep fetches in services, and run the repository quality gates. For non-trivial work, maintain `.agent/tasks/<task>/` artifacts.

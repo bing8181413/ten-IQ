@@ -1,0 +1,5 @@
+---
+description: Foretell repository-wide agent rules
+alwaysApply: true
+---
+Read `AGENTS.md` and all `.codex/skills/*/SKILL.md` files before changing code. Use semantic design tokens, existing market components and the gated workflow. Never improvise a new visual language.

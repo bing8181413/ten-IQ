@@ -1,0 +1,39 @@
+const { chromium } = require('@playwright/test');
+
+const targetPath = process.argv[2] || '/private/tmp/foretell-pixel-audit/target-current-pass60.png';
+const localPath = process.argv[3] || '/private/tmp/foretell-pixel-audit/local-5175-pass60.png';
+
+async function capturePair() {
+  const browser = await chromium.launch({
+    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    headless: true,
+  });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 1,
+    locale: 'zh-CN',
+    timezoneId: 'Asia/Shanghai',
+  });
+  const page = await context.newPage();
+
+  await page.goto('https://polymarket.com/zh', {
+    waitUntil: 'domcontentloaded',
+    timeout: 90000,
+  });
+  await page.waitForTimeout(5000);
+  await page.screenshot({ path: targetPath, fullPage: false });
+
+  await page.goto('http://127.0.0.1:5175/', {
+    waitUntil: 'domcontentloaded',
+    timeout: 60000,
+  });
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: localPath, fullPage: false });
+
+  await browser.close();
+}
+
+capturePair().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

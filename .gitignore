@@ -1,0 +1,17 @@
+node_modules
+dist
+storybook-static
+coverage
+playwright-report
+test-results
+.env
+.env.*
+!.env.example
+!.env.demo
+.DS_Store
+*.local
+*.log
+.agent/tasks/*
+!.agent/tasks/.gitkeep
+artifacts/*.png
+!artifacts/.gitkeep

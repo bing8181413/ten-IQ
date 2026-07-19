@@ -1,0 +1,17 @@
+name: Feature request
+description: Propose a product capability
+title: 'feat: '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      { label: User problem, description: Describe the problem rather than only a solution. }
+    validations: { required: true }
+  - type: textarea
+    id: outcome
+    attributes: { label: Desired outcome and success metric }
+    validations: { required: true }
+  - type: textarea
+    id: risk
+    attributes: { label: Money, identity, privacy, security or regulatory risk }
