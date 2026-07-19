@@ -81,7 +81,7 @@
     "jsdom": "29.1.1",
     "lint-staged": "16.2.7",
     "msw": "2.14.6",
-    "prettier": "3.8.4",
+    "prettier": "3.9.5",
     "prettier-plugin-tailwindcss": "0.8.0",
     "storybook": "10.4.6",
     "tailwindcss": "4.3.1",
