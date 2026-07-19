@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 export function MarketCardSkeleton() {
   return (
-    <Card className="min-h-72 p-4" aria-label="正在加载市场">
+    <Card className="min-h-72 p-4">
       <div className="flex gap-3">
         <Skeleton className="size-11 shrink-0" />
         <div className="flex-1 space-y-2">

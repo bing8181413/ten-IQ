@@ -1,22 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Activity, Award, CheckCircle2, TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
+import { useCommunityData } from '@/hooks/useProductData';
 import { cn } from '@/lib/cn';
 
-const leaders = [
-  ['MacroPilot', '+$42,680', '68%'],
-  ['SignalRoom', '+$36,210', '64%'],
-  ['EventHorizon', '+$28,940', '71%'],
-  ['DataFirst', '+$21,605', '62%'],
-  ['QuietAlpha', '+$18,320', '66%'],
-] as const;
-
-const feed = [
-  ['世界杯冠军', '西班牙概率升至 21%', '刚刚'],
-  ['BTC 价格', '“是”方向 24 小时上升 3.2%', '4 分钟前'],
-  ['全球利率', '新增 18 个演示观点', '18 分钟前'],
-  ['火星货运', '结算来源说明已更新', '1 小时前'],
-] as const;
+type TextRow = [string, string, string];
+interface AccuracyData {
+  score: number;
+  buckets: [string, string, number][];
+}
 
 export function CommunityPage({
   view = 'leaderboard',
@@ -24,6 +20,8 @@ export function CommunityPage({
   view?: 'leaderboard' | 'accuracy' | 'activity';
 }) {
   const [period, setPeriod] = useState('本周');
+  const periodKey = period === '今日' ? 'today' : period === '本月' ? 'month' : 'week';
+  const communityQuery = useCommunityData(view, periodKey);
   const config = useMemo(() => {
     if (view === 'accuracy')
       return { eyebrow: '准确率', title: '市场概率校准', icon: CheckCircle2 };
@@ -59,18 +57,40 @@ export function CommunityPage({
           ))}
         </div>
       </div>
-      {view === 'accuracy' ? (
-        <AccuracyView />
-      ) : view === 'activity' ? (
-        <ActivityView />
+      {communityQuery.data?.meta ? (
+        <FreshnessNotice
+          stale={communityQuery.data.meta.stale}
+          updatedAt={communityQuery.data.meta.updatedAt}
+          onRefresh={() => void communityQuery.refetch()}
+        />
+      ) : null}
+      {communityQuery.isLoading ? (
+        <div
+          className="mt-5 space-y-3"
+          role="status"
+          aria-busy="true"
+          aria-label="正在加载社区数据"
+        >
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+        </div>
+      ) : communityQuery.isError ? (
+        <ErrorState onRetry={() => void communityQuery.refetch()} />
+      ) : view === 'accuracy' && communityQuery.data && !Array.isArray(communityQuery.data.data) ? (
+        <AccuracyView data={communityQuery.data.data} />
+      ) : view === 'activity' && Array.isArray(communityQuery.data?.data) ? (
+        <ActivityView feed={communityQuery.data.data} />
+      ) : view === 'leaderboard' && Array.isArray(communityQuery.data?.data) ? (
+        <LeaderboardView leaders={communityQuery.data.data} />
       ) : (
-        <LeaderboardView />
+        <EmptyState title="暂无社区数据" description="切换时间范围或稍后重试。" />
       )}
     </div>
   );
 }
 
-function LeaderboardView() {
+function LeaderboardView({ leaders }: { leaders: TextRow[] }) {
   return (
     <Card className="mt-5 overflow-hidden p-0">
       <div className="grid grid-cols-[48px_minmax(0,1fr)_100px_80px] gap-3 border-b border-border bg-surface-muted px-4 py-3 text-xs font-semibold text-muted">
@@ -93,7 +113,7 @@ function LeaderboardView() {
     </Card>
   );
 }
-function ActivityView() {
+function ActivityView({ feed }: { feed: TextRow[] }) {
   return (
     <div className="mt-5 grid gap-3">
       {feed.map(([title, detail, time]) => (
@@ -111,12 +131,14 @@ function ActivityView() {
     </div>
   );
 }
-function AccuracyView() {
+function AccuracyView({ data }: { data: AccuracyData }) {
   return (
     <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_2fr]">
       <Card className="p-5">
         <div className="text-sm font-semibold text-muted">演示校准分数</div>
-        <div className="mt-2 text-4xl font-bold text-brand tabular-nums">0.084</div>
+        <div className="mt-2 text-4xl font-bold text-brand tabular-nums">
+          {data.score.toFixed(3)}
+        </div>
         <p className="mt-3 text-sm leading-6 text-muted">
           分数越低，历史概率与最终结果越接近。此处仅用于界面演示，不代表真实业绩。
         </p>
@@ -124,16 +146,8 @@ function AccuracyView() {
       <Card className="p-5">
         <h2 className="text-base font-bold text-foreground">概率区间表现</h2>
         <div className="mt-5 space-y-4">
-          {[
-            ['20–40%', '31%', 31],
-            ['40–60%', '52%', 52],
-            ['60–80%', '71%', 71],
-            ['80–100%', '91%', 91],
-          ].map(([bucket, resolved, width]) => (
-            <div
-              key={bucket as string}
-              className="grid grid-cols-[70px_1fr_50px] items-center gap-3 text-xs"
-            >
+          {data.buckets.map(([bucket, resolved, width]) => (
+            <div key={bucket} className="grid grid-cols-[70px_1fr_50px] items-center gap-3 text-xs">
               <span className="font-semibold text-muted">{bucket}</span>
               <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
                 <div className="h-full rounded-full bg-brand" style={{ width: `${width}%` }} />

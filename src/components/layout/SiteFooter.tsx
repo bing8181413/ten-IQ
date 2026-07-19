@@ -29,12 +29,21 @@ const footerGroups = [
       ['安全设置', '/account#security'],
     ],
   },
+  {
+    title: '信任与支持',
+    links: [
+      ['演示数据说明', '/zh/how-it-works#demo-data'],
+      ['隐私说明', '/zh/how-it-works#privacy'],
+      ['使用条款', '/zh/how-it-works#terms'],
+      ['服务状态与反馈', '/zh/how-it-works#support'],
+    ],
+  },
 ] as const;
 
 export function SiteFooter() {
   return (
     <footer className="mt-10 border-t border-border bg-surface" aria-label="站点页脚">
-      <div className="pm-shell grid gap-8 py-8 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <div className="pm-shell grid gap-8 py-8 md:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div>
           <Brand />
           <p className="mt-3 max-w-xs text-sm leading-6 text-muted">
@@ -57,6 +66,7 @@ export function SiteFooter() {
       <div className="border-t border-border">
         <div className="pm-shell py-4 text-xs leading-5 text-subtle">
           ten-IQ 演示版 · 概率不是保证，任何资金类功能上线前均需独立安全与合规评审。
+          本站不接收真实资金、不执行交易，也不收集真实身份、钱包或支付信息。
         </div>
       </div>
     </footer>

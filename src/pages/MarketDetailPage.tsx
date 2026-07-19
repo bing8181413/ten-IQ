@@ -9,16 +9,21 @@ import { ProbabilityChart } from '@/components/trading/ProbabilityChart';
 import { TradePanel } from '@/components/trading/TradePanel';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
 import { useMarket } from '@/hooks/useMarkets';
+import { useCommentMutation, useComments } from '@/hooks/useMarketExtras';
+import { useWatchlist, useWatchlistMutation } from '@/hooks/useWatchlist';
 import { formatCount, formatCurrency } from '@/lib/format';
 import { useTradeStore } from '@/stores/tradeStore';
 import type { Market, Outcome } from '@/types/market';
 export function MarketDetailPage() {
   const { slug = '' } = useParams();
   const [chartRange, setChartRange] = useState('全部');
-  const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const { data, isLoading, isError, refetch } = useMarket(slug);
+  const watchlistQuery = useWatchlist();
+  const watchlistMutation = useWatchlistMutation();
   if (isLoading) return <DetailSkeleton />;
   if (isError || !data)
     return (
@@ -27,6 +32,7 @@ export function MarketDetailPage() {
       </div>
     );
   const market = data.data;
+  const bookmarked = watchlistQuery.data?.data.marketIds.includes(market.id) ?? false;
   const leading = market.outcomes[0];
   const sizes: Record<string, number> = {
     '1小时': 3,
@@ -38,13 +44,22 @@ export function MarketDetailPage() {
   };
   const chartValues = market.sparkline.slice(-(sizes[chartRange] ?? market.sparkline.length));
   function copyMarketLink() {
-    void navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    });
+    setCopyError(false);
+    void navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1800);
+      })
+      .catch(() => setCopyError(true));
   }
   return (
     <div className="pm-shell py-5 pb-24 md:pb-10">
+      <FreshnessNotice
+        stale={data.meta.stale}
+        updatedAt={data.meta.updatedAt}
+        onRefresh={() => void refetch()}
+      />
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           <header className="border-b border-border pb-4">
@@ -66,7 +81,7 @@ export function MarketDetailPage() {
                   {market.title}
                 </h1>
               </div>
-              <div className="hidden items-center gap-1 sm:flex">
+              <div className="flex items-center gap-1">
                 <DetailIcon
                   label={copied ? '链接已复制' : '复制市场链接'}
                   icon={<Link2 size={18} />}
@@ -77,10 +92,20 @@ export function MarketDetailPage() {
                   label="收藏市场"
                   icon={<Bookmark size={18} />}
                   pressed={bookmarked}
-                  onClick={() => setBookmarked((value) => !value)}
+                  onClick={() =>
+                    watchlistMutation.mutate({ marketId: market.id, active: !bookmarked })
+                  }
                 />
               </div>
             </div>
+            {copied || copyError ? (
+              <p
+                role={copyError ? 'alert' : 'status'}
+                className={copyError ? 'mt-2 text-xs text-negative' : 'mt-2 text-xs text-positive'}
+              >
+                {copyError ? '复制失败，请从地址栏复制链接。' : '市场链接已复制。'}
+              </p>
+            ) : null}
           </header>
 
           <ProbabilityChart values={chartValues} label={leading?.label ?? '领先选项'} />
@@ -161,6 +186,7 @@ function OutcomeRow({
   index: number;
 }) {
   const selectOutcome = useTradeStore((state) => state.selectOutcome);
+  const setSide = useTradeStore((state) => state.setSide);
   return (
     <div className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_70px_136px_136px] sm:items-center">
       <div className="flex min-w-0 items-center gap-3">
@@ -177,17 +203,23 @@ function OutcomeRow({
       <div className="text-2xl font-bold text-foreground tabular-nums">{outcome.probability}%</div>
       <button
         type="button"
-        onClick={() => selectOutcome(outcome.id)}
+        onClick={() => {
+          selectOutcome(outcome.id);
+          setSide('buy');
+        }}
         className="min-h-11 rounded-control bg-positive-soft px-3 text-sm font-semibold text-positive hover:bg-positive hover:text-white"
       >
-        买入 是 {outcome.probability.toFixed(1)}%
+        买入 {outcome.label} {outcome.probability.toFixed(1)}%
       </button>
       <button
         type="button"
-        onClick={() => selectOutcome(outcome.id)}
+        onClick={() => {
+          selectOutcome(outcome.id);
+          setSide('sell');
+        }}
         className="min-h-11 rounded-control bg-negative-soft px-3 text-sm font-semibold text-negative hover:bg-negative hover:text-white"
       >
-        买入 否 {(100 - outcome.probability).toFixed(1)}%
+        卖出 {outcome.label} {outcome.probability.toFixed(1)}%
       </button>
     </div>
   );
@@ -218,6 +250,9 @@ function DetailIcon({
 }
 
 function Discussion({ market }: { market: Market }) {
+  const [text, setText] = useState('');
+  const commentsQuery = useComments(market.id);
+  const commentMutation = useCommentMutation(market.id);
   return (
     <section
       className="rounded-card border border-border bg-surface p-5"
@@ -236,23 +271,43 @@ function Discussion({ market }: { market: Market }) {
         id="market-comment"
         rows={3}
         placeholder="分享你对这个市场的判断..."
+        value={text}
+        maxLength={280}
+        onChange={(event) => {
+          setText(event.target.value);
+          commentMutation.reset();
+        }}
         className="mt-4 w-full resize-none rounded-control border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-subtle focus:border-brand"
       />
       <div className="mt-2 flex justify-end">
         <button
           type="button"
-          disabled
-          className="min-h-9 rounded-control bg-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
+          disabled={!text.trim() || commentMutation.isPending}
+          onClick={() =>
+            commentMutation.mutate(text, {
+              onSuccess: () => setText(''),
+            })
+          }
+          className="min-h-10 rounded-control bg-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
         >
-          登录后发布
+          {commentMutation.isPending ? '正在发布…' : '以本地演示身份发布'}
         </button>
       </div>
-      <div className="mt-4 border-t border-border pt-4 text-sm leading-6 text-muted">
-        <strong className="text-foreground">ten-IQ 研究员</strong>
-        <p className="mt-1">
-          关注结算来源和截止日期，再判断 {market.outcomes[0]?.label ?? '领先结果'}{' '}
-          的当前概率是否合理。
+      {commentMutation.isError ? (
+        <p role="alert" className="mt-2 text-xs text-negative">
+          {commentMutation.error.message || '评论发布失败，请重试。'}
         </p>
+      ) : null}
+      <div className="mt-4 space-y-4 border-t border-border pt-4 text-sm leading-6 text-muted">
+        {commentsQuery.isLoading ? <Skeleton className="h-16" /> : null}
+        {commentsQuery.isError ? <ErrorState onRetry={() => void commentsQuery.refetch()} /> : null}
+        {commentsQuery.data?.data.map((comment) => (
+          <article key={comment.id}>
+            <strong className="text-foreground">{comment.author}</strong>
+            <p className="mt-1 whitespace-pre-wrap">{comment.text}</p>
+          </article>
+        ))}
+        {commentsQuery.data?.data.length === 0 ? <p>还没有评论，发布第一条本地演示观点。</p> : null}
       </div>
     </section>
   );

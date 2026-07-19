@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Radio, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { sportsLeagues, sportsMatches, type SportsMatch } from '@/data/productPages';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
+import { useSportsEvents } from '@/hooks/useProductData';
+import { useProductPreview } from '@/hooks/useProductPreview';
 import { cn } from '@/lib/cn';
+import type { SportsEvent } from '@/types/product';
 
 export function SportsPage() {
   const location = useLocation();
@@ -14,14 +19,12 @@ export function SportsPage() {
   const [league, setLeague] = useState('全部');
   const [selected, setSelected] = useState<string | null>(null);
   const [expandedLeagues, setExpandedLeagues] = useState(false);
-  const [previewed, setPreviewed] = useState(false);
-  const leagueOptions = expandedLeagues
-    ? [...sportsLeagues, '高尔夫', 'F1 赛车', '板球']
-    : sportsLeagues;
-  const visible = useMemo(
-    () => sportsMatches.filter((match) => league === '全部' || match.league === league),
-    [league],
-  );
+  const previewMutation = useProductPreview();
+  const modeKey = mode === '实时' ? 'live' : 'futures';
+  const eventsQuery = useSportsEvents(modeKey, league);
+  const sportsLeagues = eventsQuery.data?.meta.leagues ?? ['全部'];
+  const leagueOptions = expandedLeagues ? sportsLeagues : sportsLeagues.slice(0, 6);
+  const visible = eventsQuery.data?.data ?? [];
 
   return (
     <div className="pm-shell py-5 pb-24 md:pb-10">
@@ -40,6 +43,9 @@ export function SportsPage() {
               aria-pressed={mode === item}
               onClick={() => {
                 setMode(item);
+                setLeague('全部');
+                setSelected(null);
+                previewMutation.reset();
                 void navigate(item === '实时' ? '/zh/sports/live' : '/zh/sports/futures');
               }}
               className={cn(
@@ -59,7 +65,11 @@ export function SportsPage() {
             key={item}
             type="button"
             aria-pressed={league === item}
-            onClick={() => setLeague(item)}
+            onClick={() => {
+              setLeague(item);
+              setSelected(null);
+              previewMutation.reset();
+            }}
             className={cn(
               'h-9 shrink-0 rounded-control px-4 text-sm font-semibold',
               league === item
@@ -79,6 +89,13 @@ export function SportsPage() {
           {expandedLeagues ? '收起' : '更多'} <ChevronDown aria-hidden="true" size={14} />
         </button>
       </div>
+      {eventsQuery.data?.meta ? (
+        <FreshnessNotice
+          stale={eventsQuery.data.meta.stale}
+          updatedAt={eventsQuery.data.meta.updatedAt}
+          onRefresh={() => void eventsQuery.refetch()}
+        />
+      ) : null}
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0 space-y-5" aria-labelledby="sports-events-title">
@@ -90,12 +107,23 @@ export function SportsPage() {
               variant="ghost"
               size="sm"
               disabled={league === '全部'}
-              onClick={() => setLeague('全部')}
+              onClick={() => {
+                setLeague('全部');
+                setSelected(null);
+                previewMutation.reset();
+              }}
             >
               <SlidersHorizontal aria-hidden="true" size={15} /> 重置筛选
             </Button>
           </div>
-          {visible.length ? (
+          {eventsQuery.isLoading ? (
+            <div className="space-y-3" role="status" aria-busy="true" aria-label="正在加载体育赛事">
+              <Skeleton className="h-40" />
+              <Skeleton className="h-40" />
+            </div>
+          ) : eventsQuery.isError ? (
+            <ErrorState onRetry={() => void eventsQuery.refetch()} />
+          ) : visible.length ? (
             <div className="space-y-3">
               {visible.map((match) => (
                 <SportsMatchCard
@@ -104,7 +132,7 @@ export function SportsPage() {
                   selected={selected}
                   onSelect={(value) => {
                     setSelected(value);
-                    setPreviewed(false);
+                    previewMutation.reset();
                   }}
                 />
               ))}
@@ -114,23 +142,47 @@ export function SportsPage() {
           )}
         </section>
 
-        <aside className="hidden xl:block">
-          <Card className="sticky top-36 p-4">
+        <aside className={selected ? 'block' : 'hidden xl:block'}>
+          <Card className="fixed inset-x-3 bottom-20 z-30 p-4 shadow-popover xl:sticky xl:inset-auto xl:top-36 xl:shadow-card">
             <h2 className="text-base font-bold text-foreground">体育订单</h2>
             {selected ? (
               <>
                 <p className="mt-3 rounded-control bg-brand-softer p-3 text-sm font-semibold text-brand">
                   已选择 {selected}
                 </p>
-                <Button className="mt-4" fullWidth onClick={() => setPreviewed(true)}>
-                  预览盘口
+                <Button
+                  className="mt-4"
+                  fullWidth
+                  disabled={previewMutation.isPending}
+                  onClick={() =>
+                    previewMutation.mutate({ kind: 'sports', selection: selected, amount: 10 })
+                  }
+                >
+                  {previewMutation.isPending ? '正在生成预览…' : '预览盘口'}
                 </Button>
-                {previewed ? (
+                <Button
+                  className="mt-2 xl:hidden"
+                  variant="ghost"
+                  fullWidth
+                  onClick={() => {
+                    setSelected(null);
+                    previewMutation.reset();
+                  }}
+                >
+                  清除选择
+                </Button>
+                {previewMutation.data ? (
                   <p
                     role="status"
                     className="mt-3 rounded-control bg-positive-soft p-3 text-sm font-semibold text-positive"
                   >
-                    演示盘口已生成，不会提交真实订单。
+                    {previewMutation.data.data.summary}；预计演示返回 $
+                    {previewMutation.data.data.estimatedReturn.toFixed(2)}。不会提交真实订单。
+                  </p>
+                ) : null}
+                {previewMutation.isError ? (
+                  <p role="alert" className="mt-3 text-sm text-negative">
+                    {previewMutation.error.message}
                   </p>
                 ) : null}
               </>
@@ -157,7 +209,7 @@ function SportsMatchCard({
   selected,
   onSelect,
 }: {
-  match: SportsMatch;
+  match: SportsEvent;
   selected: string | null;
   onSelect: (value: string) => void;
 }) {

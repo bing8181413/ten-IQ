@@ -11,7 +11,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Input } from '@/components/ui/Input';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
 import { useMarkets } from '@/hooks/useMarkets';
+import { useSportsEvents } from '@/hooks/useProductData';
+import { useWatchlist, useWatchlistMutation } from '@/hooks/useWatchlist';
 import { track } from '@/lib/analytics';
 import { useTradeStore } from '@/stores/tradeStore';
 import type { Market, Outcome } from '@/types/market';
@@ -77,12 +80,38 @@ export function HomePage() {
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [marketSearch, setMarketSearch] = useState(search);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
   const effectiveCategory = realCategories.has(category) ? category : '全部';
-  const filters = { category: effectiveCategory, sort, ...(search ? { search } : {}) };
-  const { data, isLoading, isError, refetch, isFetching } = useMarkets(filters);
+  const filters = {
+    category: effectiveCategory,
+    sort,
+    ...(search ? { search } : {}),
+    ...(topic ? { topic } : {}),
+  };
+  const { data, isLoading, isError, refetch, isFetching } = useMarkets({ ...filters, limit: 50 });
+  const featuredSportsQuery = useSportsEvents('live', '世界杯');
+  const watchlistQuery = useWatchlist();
+  const watchlistMutation = useWatchlistMutation();
+  const watchlistedIds = watchlistQuery.data?.data.marketIds ?? [];
   const markets = data?.data ?? [];
-  const visibleMarkets = watchlistOnly ? markets.slice(0, 3) : markets;
-  const primaryFeatured = markets.find((market) => market.featured) ?? markets[0];
+  const visibleMarkets = watchlistOnly
+    ? markets.filter((market) => watchlistedIds.includes(market.id))
+    : markets;
+  const featuredMarkets = markets
+    .filter((market) => market.featured || market.trending)
+    .slice(0, 6);
+  const primaryFeatured =
+    featuredMarkets.length > 0
+      ? featuredMarkets[featuredIndex % featuredMarkets.length]
+      : markets[0];
+  const previousFeatured =
+    featuredMarkets.length > 0
+      ? featuredMarkets[(featuredIndex - 1 + featuredMarkets.length) % featuredMarkets.length]
+      : undefined;
+  const nextFeatured =
+    featuredMarkets.length > 0
+      ? featuredMarkets[(featuredIndex + 1) % featuredMarkets.length]
+      : undefined;
   function selectTopic(value: string) {
     const next = new URLSearchParams(params);
     if (!value || value === '全部') {
@@ -118,6 +147,13 @@ export function HomePage() {
       <h1 className={sectionTitle ? 'text-2xl font-bold text-foreground' : 'sr-only'}>
         {sectionTitle ?? 'ten-IQ 预测市场'}
       </h1>
+      {data?.meta ? (
+        <FreshnessNotice
+          stale={data.meta.stale}
+          updatedAt={data.meta.updatedAt}
+          onRefresh={() => void refetch()}
+        />
+      ) : null}
       {sectionTitle ? (
         <p className="mt-2 text-sm text-muted">
           浏览 {sectionTitle} 的最新概率、成交量和市场变化。
@@ -129,7 +165,13 @@ export function HomePage() {
             {isLoading ? (
               <Skeleton className="h-[30rem] rounded-card" />
             ) : primaryFeatured ? (
-              <FeaturedMarketCard market={primaryFeatured} onOutcomeSelect={selectOutcome} />
+              <FeaturedMarketCard
+                market={primaryFeatured}
+                {...(featuredSportsQuery.data?.data[0]
+                  ? { sportsEvent: featuredSportsQuery.data.data[0] }
+                  : {})}
+                onOutcomeSelect={selectOutcome}
+              />
             ) : (
               <EmptyState
                 title="当前筛选暂无精选市场"
@@ -139,30 +181,52 @@ export function HomePage() {
               />
             )}
             <div className="mt-[7px] flex items-center justify-between gap-3">
-              <div className="ml-4 flex items-center gap-2">
-                <span className="h-1.5 w-8 rounded-full bg-foreground" />
-                {Array.from({ length: 9 }, (_, index) => (
-                  <span key={index} className="size-1.5 rounded-full bg-border-strong" />
+              <div className="ml-4 flex items-center gap-2" role="group" aria-label="精选市场轮播">
+                {featuredMarkets.map((market, index) => (
+                  <button
+                    key={market.id}
+                    type="button"
+                    aria-label={`显示精选市场：${market.title}`}
+                    aria-pressed={primaryFeatured?.id === market.id}
+                    onClick={() => setFeaturedIndex(index)}
+                    className="inline-flex size-10 items-center justify-center rounded-control"
+                  >
+                    <span
+                      className={
+                        primaryFeatured?.id === market.id
+                          ? 'h-2 w-8 rounded-full bg-foreground'
+                          : 'size-2 rounded-full bg-border-strong'
+                      }
+                    />
+                  </button>
                 ))}
               </div>
               <div className="hidden min-w-0 translate-x-[11px] items-center gap-3 text-sm font-medium text-muted sm:flex">
                 <button
                   type="button"
-                  onClick={() => void navigate('/zh/event/world-cup-winner')}
+                  disabled={!previousFeatured}
+                  onClick={() =>
+                    setFeaturedIndex(
+                      (current) => (current - 1 + featuredMarkets.length) % featuredMarkets.length,
+                    )
+                  }
                   className="inline-flex h-14 items-center py-2 pr-1.5 pl-2 hover:text-foreground"
                 >
-                  <span className="inline-flex h-10 items-center gap-2 rounded-full bg-surface-muted px-[15px]">
+                  <span className="inline-flex h-10 max-w-56 items-center gap-2 rounded-full bg-surface-muted px-[15px]">
                     <ChevronRight aria-hidden="true" size={15} className="rotate-180" />
-                    Golden Boot
+                    <span className="truncate">{previousFeatured?.title ?? '上一项'}</span>
                   </span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => void navigate('/zh/sports/world-cup')}
+                  disabled={!nextFeatured}
+                  onClick={() =>
+                    setFeaturedIndex((current) => (current + 1) % featuredMarkets.length)
+                  }
                   className="inline-flex h-14 items-center py-2 pr-1.5 pl-2 hover:text-foreground"
                 >
-                  <span className="inline-flex h-10 items-center gap-2 rounded-full bg-surface-muted px-[15px]">
-                    Bosnia-Herzegovina vs. Qatar
+                  <span className="inline-flex h-10 max-w-56 items-center gap-2 rounded-full bg-surface-muted px-[15px]">
+                    <span className="truncate">{nextFeatured?.title ?? '下一项'}</span>
                     <ChevronRight aria-hidden="true" size={15} />
                   </span>
                 </button>
@@ -201,7 +265,7 @@ export function HomePage() {
               aria-label="搜索所有盘口"
               aria-pressed={showSearch}
               onClick={() => setShowSearch((value) => !value)}
-              className="hidden size-9 items-center justify-center rounded-control hover:bg-surface-muted md:inline-flex"
+              className="hidden size-10 items-center justify-center rounded-control hover:bg-surface-muted md:inline-flex"
             >
               <Search aria-hidden="true" size={18} />
             </button>
@@ -210,7 +274,7 @@ export function HomePage() {
               aria-label="筛选盘口"
               aria-pressed={showFilters}
               onClick={() => setShowFilters((value) => !value)}
-              className="inline-flex size-9 items-center justify-center rounded-control hover:bg-surface-muted"
+              className="inline-flex size-10 items-center justify-center rounded-control hover:bg-surface-muted"
             >
               <SlidersHorizontal aria-hidden="true" size={18} />
             </button>
@@ -219,7 +283,7 @@ export function HomePage() {
               aria-label="收藏市场"
               aria-pressed={watchlistOnly}
               onClick={() => setWatchlistOnly((value) => !value)}
-              className="inline-flex size-9 items-center justify-center rounded-control hover:bg-surface-muted aria-pressed:bg-brand-soft aria-pressed:text-brand"
+              className="inline-flex size-10 items-center justify-center rounded-control hover:bg-surface-muted aria-pressed:bg-brand-soft aria-pressed:text-brand"
             >
               <Bookmark aria-hidden="true" size={18} />
             </button>
@@ -314,6 +378,10 @@ export function HomePage() {
             markets={visibleMarkets}
             loading={isLoading}
             onOutcomeSelect={selectOutcome}
+            watchlistedIds={watchlistedIds}
+            onWatchlistToggle={(market, active) =>
+              watchlistMutation.mutate({ marketId: market.id, active })
+            }
           />
         )}
       </section>

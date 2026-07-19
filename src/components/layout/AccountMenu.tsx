@@ -15,55 +15,65 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { demoAccount } from '@/data/demoAccount';
+import { useAccount } from '@/hooks/useAccount';
+import { useWatchlist } from '@/hooks/useWatchlist';
 import { cn } from '@/lib/cn';
 
-const menuItems = [
-  {
-    label: '个人主页',
-    detail: '资料、等级与公开统计',
-    to: '/account',
-    icon: CircleUserRound,
-    tone: 'neutral',
-  },
-  {
-    label: '我的持仓',
-    detail: `${demoAccount.openPositions} 个进行中`,
-    to: '/account#positions',
-    icon: ListChecks,
-    tone: 'neutral',
-  },
-  {
-    label: '关注市场',
-    detail: `${demoAccount.watchlist} 个观察项`,
-    to: '/account#watchlist',
-    icon: Star,
-    tone: 'neutral',
-  },
-  {
-    label: '账户活动',
-    detail: '订单预览与提醒记录',
-    to: '/account#activity',
-    icon: Activity,
-    tone: 'neutral',
-  },
-  {
-    label: '奖励中心',
-    detail: `${demoAccount.rewardsProgress}% 本周进度`,
-    to: '/account#rewards',
-    icon: Gift,
-    tone: 'brand',
-  },
-  {
-    label: '安全设置',
-    detail: '身份与签名接入前检查',
-    to: '/account#security',
-    icon: ShieldCheck,
-    tone: 'positive',
-  },
-] as const;
-
 export function AccountMenu() {
+  const accountQuery = useAccount();
+  const watchlistQuery = useWatchlist();
+  const account = accountQuery.data?.data;
+  if (!account) {
+    return (
+      <button type="button" disabled className="pm-auth-button h-9 px-3 text-sm text-muted">
+        演示账户加载中
+      </button>
+    );
+  }
+  const menuItems = [
+    {
+      label: '个人主页',
+      detail: '资料、等级与公开统计',
+      to: '/account',
+      icon: CircleUserRound,
+      tone: 'neutral',
+    },
+    {
+      label: '我的持仓',
+      detail: `${account.openPositions} 个进行中`,
+      to: '/account#positions',
+      icon: ListChecks,
+      tone: 'neutral',
+    },
+    {
+      label: '关注市场',
+      detail: `${watchlistQuery.data?.data.marketIds.length ?? account.watchlistMarketIds.length} 个观察项`,
+      to: '/account#watchlist',
+      icon: Star,
+      tone: 'neutral',
+    },
+    {
+      label: '账户活动',
+      detail: '订单预览与提醒记录',
+      to: '/account#activity',
+      icon: Activity,
+      tone: 'neutral',
+    },
+    {
+      label: '奖励中心',
+      detail: `${account.rewardsProgress}% 本周进度`,
+      to: '/account#rewards',
+      icon: Gift,
+      tone: 'brand',
+    },
+    {
+      label: '安全设置',
+      detail: '身份与签名接入前检查',
+      to: '/account#security',
+      icon: ShieldCheck,
+      tone: 'positive',
+    },
+  ] as const;
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -72,8 +82,8 @@ export function AccountMenu() {
           className="pm-auth-button inline-flex h-9 items-center gap-2 border border-border bg-surface px-2.5 text-sm font-semibold text-foreground hover:border-border-strong hover:bg-surface-hover"
           aria-label="打开个人中心"
         >
-          <AccountAvatar size="sm" />
-          <span className="hidden max-w-24 truncate 2xl:inline">{demoAccount.handle}</span>
+          <AccountAvatar size="sm" initials={account.initials} />
+          <span className="hidden max-w-24 truncate 2xl:inline">{account.handle}</span>
           <ChevronDown aria-hidden="true" size={14} className="text-subtle" />
         </button>
       </DropdownMenu.Trigger>
@@ -85,13 +95,13 @@ export function AccountMenu() {
         >
           <div className="rounded-card border border-border bg-surface p-3">
             <div className="flex items-start gap-3">
-              <AccountAvatar />
+              <AccountAvatar initials={account.initials} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-bold text-foreground">{demoAccount.name}</div>
+                <div className="truncate text-sm font-bold text-foreground">{account.name}</div>
                 <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                  <span>{demoAccount.handle}</span>
+                  <span>{account.handle}</span>
                   <span aria-hidden="true">·</span>
-                  <span>{demoAccount.level}</span>
+                  <span>{account.level}</span>
                 </div>
               </div>
             </div>
@@ -99,13 +109,13 @@ export function AccountMenu() {
               <AccountMetric
                 icon={CircleDollarSign}
                 label="演示资金"
-                value={demoAccount.balance}
+                value={account.balance}
                 tone="positive"
               />
               <AccountMetric
                 icon={TrendingUp}
                 label="组合价值"
-                value={demoAccount.portfolioValue}
+                value={account.portfolioValue}
                 tone="brand"
               />
             </div>
@@ -144,6 +154,9 @@ export function AccountMenu() {
 }
 
 export function MobileAccountSummary({ onNavigate }: { onNavigate: () => void }) {
+  const accountQuery = useAccount();
+  const account = accountQuery.data?.data;
+  if (!account) return null;
   return (
     <Link
       to="/account"
@@ -151,10 +164,10 @@ export function MobileAccountSummary({ onNavigate }: { onNavigate: () => void })
       className="mt-4 block rounded-card border border-border bg-surface-muted p-3 hover:bg-surface-hover"
     >
       <div className="flex items-center gap-3">
-        <AccountAvatar />
+        <AccountAvatar initials={account.initials} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-bold text-foreground">{demoAccount.name}</div>
-          <div className="mt-0.5 text-xs text-muted">{demoAccount.handle}</div>
+          <div className="truncate text-sm font-bold text-foreground">{account.name}</div>
+          <div className="mt-0.5 text-xs text-muted">{account.handle}</div>
         </div>
         <Bell aria-hidden="true" size={17} className="text-foreground" />
       </div>
@@ -162,13 +175,13 @@ export function MobileAccountSummary({ onNavigate }: { onNavigate: () => void })
         <AccountMetric
           icon={CircleDollarSign}
           label="演示资金"
-          value={demoAccount.balance}
+          value={account.balance}
           tone="positive"
         />
         <AccountMetric
           icon={ListChecks}
           label="持仓"
-          value={`${demoAccount.openPositions} 个`}
+          value={`${account.openPositions} 个`}
           tone="neutral"
         />
       </div>
@@ -176,7 +189,13 @@ export function MobileAccountSummary({ onNavigate }: { onNavigate: () => void })
   );
 }
 
-export function AccountAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+export function AccountAvatar({
+  size = 'md',
+  initials = 'TI',
+}: {
+  size?: 'sm' | 'md' | 'lg';
+  initials?: string;
+}) {
   return (
     <span
       aria-hidden="true"
@@ -190,7 +209,7 @@ export function AccountAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
         'font-bold tracking-normal',
       )}
     >
-      {demoAccount.initials}
+      {initials}
     </span>
   );
 }

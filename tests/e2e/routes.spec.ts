@@ -65,3 +65,8 @@ test('all public routes render without a 404 or page error', async ({ page }, te
 
   expect(pageErrors).toEqual([]);
 });
+
+test('unknown zh routes render the explicit not-found page', async ({ page }) => {
+  await page.goto('/zh/not-a-real-market-section');
+  await expect(page.getByRole('heading', { name: '页面不存在' })).toBeVisible();
+});

@@ -1,46 +1,37 @@
 import type { Market, Outcome } from '@/types/market';
-import { MarketCard, type MarketCardVariant } from './MarketCard';
+import { MarketCard } from './MarketCard';
 import { MarketCardSkeleton } from './MarketCardSkeleton';
 
-const targetVariants: MarketCardVariant[] = [
-  'worldCupChampion',
-  'btcDirection',
-  'fadedChart',
-  'iranNuclear',
-  'portugalMatch',
-  'englandMatch',
-  'croatiaMatch',
-  'teamMatch',
-];
 export function MarketGrid({
   markets,
   loading = false,
   onOutcomeSelect,
+  watchlistedIds = [],
+  onWatchlistToggle,
 }: {
   markets: Market[];
   loading?: boolean;
   onOutcomeSelect?: (market: Market, outcome: Outcome) => void;
+  watchlistedIds?: string[];
+  onWatchlistToggle?: (market: Market, active: boolean) => void;
 }) {
   if (loading)
     return (
-      <div className="market-grid gap-3" aria-busy="true">
-        {Array.from({ length: 8 }, (_, i) => (
-          <MarketCardSkeleton key={i} />
+      <div className="market-grid gap-3" role="status" aria-busy="true" aria-label="正在加载盘口">
+        {Array.from({ length: 8 }, (_, index) => (
+          <MarketCardSkeleton key={index} />
         ))}
       </div>
     );
-  const useTargetShowcase =
-    markets.length >= targetVariants.length && markets[0]?.id === 'mkt-world-cup-2026';
   return (
     <div className="market-grid gap-3">
-      {markets.map((market, index) => (
+      {markets.map((market) => (
         <MarketCard
           key={market.id}
           market={market}
-          {...(useTargetShowcase && targetVariants[index]
-            ? { variant: targetVariants[index] }
-            : {})}
+          watchlisted={watchlistedIds.includes(market.id)}
           {...(onOutcomeSelect ? { onOutcomeSelect } : {})}
+          {...(onWatchlistToggle ? { onWatchlistToggle } : {})}
         />
       ))}
     </div>

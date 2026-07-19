@@ -14,17 +14,14 @@ import { Link } from 'react-router-dom';
 import { AccountAvatar } from '@/components/layout/AccountMenu';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { demoAccount } from '@/data/demoAccount';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
+import { useAccount } from '@/hooks/useAccount';
+import { useMarkets } from '@/hooks/useMarkets';
+import { useWatchlist } from '@/hooks/useWatchlist';
 import { cn } from '@/lib/cn';
-
-const accountStats = [
-  { label: '组合价值', value: demoAccount.portfolioValue, tone: 'brand', icon: WalletCards },
-  { label: '可用演示资金', value: demoAccount.available, tone: 'positive', icon: CircleDollarSign },
-  { label: '未实现盈亏', value: demoAccount.unrealizedPnl, tone: 'positive', icon: Activity },
-  { label: '胜率', value: demoAccount.winRate, tone: 'neutral', icon: ShieldCheck },
-  { label: '排名', value: demoAccount.rank, tone: 'neutral', icon: Star },
-  { label: '关注市场', value: `${demoAccount.watchlist}`, tone: 'neutral', icon: Bell },
-];
+import { formatCurrency, formatProbability } from '@/lib/format';
 
 const quickActions = [
   { label: '我的持仓', href: '#positions', icon: ListChecks, tone: 'neutral' },
@@ -36,25 +33,70 @@ const quickActions = [
 ];
 
 export function AccountPage() {
+  const accountQuery = useAccount();
+  const watchlistQuery = useWatchlist();
+  const marketsQuery = useMarkets({ category: '全部', sort: 'trending', limit: 50 });
+  if (accountQuery.isLoading) {
+    return (
+      <div className="pm-shell py-6" role="status" aria-busy="true" aria-label="正在加载演示账户">
+        <Skeleton className="h-48" />
+        <Skeleton className="mt-4 h-80" />
+      </div>
+    );
+  }
+  if (accountQuery.isError || !accountQuery.data) {
+    return (
+      <div className="pm-shell py-8">
+        <ErrorState onRetry={() => void accountQuery.refetch()} />
+      </div>
+    );
+  }
+  const account = accountQuery.data.data;
+  const watchlistedIds = watchlistQuery.data?.data.marketIds ?? [];
+  const liveWatchMarkets = (marketsQuery.data?.data ?? [])
+    .filter((market) => watchlistedIds.includes(market.id))
+    .map((market) => ({
+      title: market.title,
+      probability: formatProbability(market.outcomes[0]?.probability ?? 0),
+      volume: formatCurrency(market.volume),
+    }));
+  const accountStats = [
+    { label: '组合价值', value: account.portfolioValue, tone: 'brand', icon: WalletCards },
+    { label: '可用演示资金', value: account.available, tone: 'positive', icon: CircleDollarSign },
+    { label: '未实现盈亏', value: account.unrealizedPnl, tone: 'positive', icon: Activity },
+    { label: '胜率', value: account.winRate, tone: 'neutral', icon: ShieldCheck },
+    { label: '排名', value: account.rank, tone: 'neutral', icon: Star },
+    {
+      label: '关注市场',
+      value: watchlistQuery.isLoading ? '—' : `${watchlistedIds.length}`,
+      tone: 'neutral',
+      icon: Bell,
+    },
+  ];
   return (
     <div className="pm-shell py-6 pb-24 md:pb-10">
+      <FreshnessNotice
+        stale={accountQuery.data.meta.stale}
+        updatedAt={accountQuery.data.meta.updatedAt}
+        onRefresh={() => void accountQuery.refetch()}
+      />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-4">
           <Card className="overflow-hidden p-0">
             <div className="border-b border-border bg-surface-muted p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <AccountAvatar size="lg" />
+                  <AccountAvatar size="lg" initials={account.initials} />
                   <div className="min-w-0">
                     <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
-                      {demoAccount.name}
+                      {account.name}
                     </h1>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-                      <span>{demoAccount.handle}</span>
+                      <span>{account.handle}</span>
                       <span aria-hidden="true">·</span>
-                      <span>{demoAccount.level}</span>
+                      <span>{account.level}</span>
                       <span aria-hidden="true">·</span>
-                      <span>{demoAccount.joined} 加入</span>
+                      <span>{account.joined} 加入</span>
                     </div>
                   </div>
                 </div>
@@ -107,7 +149,7 @@ export function AccountPage() {
               description="展示用户当前关注的市场方向、概率和演示组合价值。"
             />
             <div className="mt-3 grid gap-3">
-              {demoAccount.positions.map((position) => (
+              {account.positions.map((position) => (
                 <Card key={position.market} className="p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="min-w-0 flex-1">
@@ -143,7 +185,27 @@ export function AccountPage() {
               description="用于快速回到用户最关心的盘口。"
             />
             <div className="mt-3 grid gap-3 md:grid-cols-3">
-              {demoAccount.watchMarkets.map((market) => (
+              {watchlistQuery.isLoading || marketsQuery.isLoading ? (
+                <Skeleton className="h-36 md:col-span-3" />
+              ) : watchlistQuery.isError || marketsQuery.isError ? (
+                <div className="md:col-span-3">
+                  <ErrorState
+                    onRetry={() =>
+                      void Promise.all([watchlistQuery.refetch(), marketsQuery.refetch()])
+                    }
+                  />
+                </div>
+              ) : null}
+              {!watchlistQuery.isLoading &&
+              !marketsQuery.isLoading &&
+              !watchlistQuery.isError &&
+              !marketsQuery.isError &&
+              liveWatchMarkets.length === 0 ? (
+                <Card className="p-6 text-center text-sm text-muted md:col-span-3">
+                  关注列表为空。可在首页或盘口详情中添加市场。
+                </Card>
+              ) : null}
+              {liveWatchMarkets.map((market) => (
                 <Card key={market.title} className="p-4">
                   <div className="text-sm font-semibold text-foreground">{market.title}</div>
                   <div className="mt-4 flex items-end justify-between">
@@ -200,7 +262,7 @@ export function AccountPage() {
           <Card id="activity" className="p-4">
             <h2 className="text-base font-semibold text-foreground">近期活动</h2>
             <div className="mt-3 divide-y divide-border">
-              {demoAccount.activity.map((item) => (
+              {account.activity.map((item) => (
                 <div key={`${item.label}-${item.detail}`} className="py-3 first:pt-0 last:pb-0">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-foreground">{item.label}</div>
@@ -220,11 +282,11 @@ export function AccountPage() {
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-muted">
               <div
                 className="h-full rounded-full bg-brand"
-                style={{ width: `${demoAccount.rewardsProgress}%` }}
+                style={{ width: `${account.rewardsProgress}%` }}
               />
             </div>
             <div className="mt-2 text-xs font-semibold text-brand tabular-nums">
-              {demoAccount.rewardsProgress}% 已完成
+              {account.rewardsProgress}% 已完成
             </div>
           </Card>
 

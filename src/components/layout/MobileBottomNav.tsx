@@ -1,11 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, CircleUserRound, House, Search } from 'lucide-react';
+import { BellRing, House, Menu, Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
 const items = [
   { to: '/', label: '首页', icon: House },
-  { to: '/zh/sports/live', label: '实时', icon: Activity },
   { to: '/zh/predictions', label: '搜索', icon: Search },
-  { to: '/account', label: '账户', icon: CircleUserRound },
+  { to: '/zh/breaking', label: '突发', icon: BellRing },
+  { to: '/account', label: '更多', icon: Menu },
 ];
 export function MobileBottomNav() {
   const location = useLocation();

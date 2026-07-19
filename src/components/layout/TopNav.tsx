@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -61,7 +61,7 @@ function SearchForm({ mobile = false, onDone }: { mobile?: boolean; onDone?: () 
       <Input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="搜索 markets..."
+        placeholder="搜索盘口..."
         aria-label="搜索市场"
         className="pm-search-input h-10 border-transparent bg-surface-muted py-1 pr-3 pl-11 text-sm"
       />
@@ -74,6 +74,8 @@ function SearchForm({ mobile = false, onDone }: { mobile?: boolean; onDone?: () 
 export function TopNav() {
   const [open, setOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null);
+  const [demoAuthenticated, setDemoAuthenticated] = useState(false);
+  const desktopLoginRef = useRef<HTMLButtonElement>(null);
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface">
       <div className="pm-shell pm-top-row">
@@ -89,21 +91,27 @@ export function TopNav() {
           <span className="shrink-0 whitespace-nowrap">玩法介绍</span>
         </Link>
         <div className="ml-auto hidden items-center gap-3 sm:flex">
-          <button
-            type="button"
-            onClick={() => setAuthMode('login')}
-            className="pm-auth-button inline-flex h-9 items-center justify-center px-3 text-sm font-semibold whitespace-nowrap text-brand hover:bg-brand-softer"
-          >
-            登陆
-          </button>
-          <button
-            type="button"
-            onClick={() => setAuthMode('register')}
-            className="pm-auth-button inline-flex h-9 items-center justify-center bg-brand px-4 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-strong"
-          >
-            注册
-          </button>
-          <AccountMenu />
+          {demoAuthenticated ? (
+            <AccountMenu />
+          ) : (
+            <>
+              <button
+                ref={desktopLoginRef}
+                type="button"
+                onClick={() => setAuthMode('login')}
+                className="pm-auth-button inline-flex h-9 items-center justify-center px-3 text-sm font-semibold whitespace-nowrap text-brand hover:bg-brand-softer"
+              >
+                登录
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode('register')}
+                className="pm-auth-button inline-flex h-9 items-center justify-center bg-brand px-4 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-strong"
+              >
+                注册
+              </button>
+            </>
+          )}
         </div>
         <Dialog.Root open={open} onOpenChange={setOpen}>
           <Dialog.Trigger asChild>
@@ -113,7 +121,11 @@ export function TopNav() {
           </Dialog.Trigger>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay" />
-            <Dialog.Content className="fixed inset-x-3 top-3 z-50 animate-enter rounded-panel border border-border bg-surface p-4 shadow-popover">
+            <Dialog.Content className="fixed inset-x-3 top-3 z-50 max-h-[calc(100dvh-1.5rem)] animate-enter overflow-y-auto rounded-panel border border-border bg-surface p-4 shadow-popover">
+              <Dialog.Title className="sr-only">移动导航菜单</Dialog.Title>
+              <Dialog.Description className="sr-only">
+                搜索市场、访问分类或进入演示账户。
+              </Dialog.Description>
               <div className="flex items-center justify-between">
                 <Brand />
                 <Dialog.Close asChild>
@@ -125,24 +137,32 @@ export function TopNav() {
               <div className="mt-4">
                 <SearchForm mobile onDone={() => setOpen(false)} />
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Dialog.Close asChild>
-                  <Link
-                    to="/account"
-                    className="rounded-control px-3 py-3 text-center text-sm font-semibold text-brand hover:bg-brand-softer"
-                  >
-                    登陆
-                  </Link>
-                </Dialog.Close>
-                <Dialog.Close asChild>
-                  <Link
-                    to="/account"
-                    className="rounded-control bg-brand px-3 py-3 text-center text-sm font-semibold text-white hover:bg-brand-strong"
-                  >
-                    注册
-                  </Link>
-                </Dialog.Close>
-              </div>
+              {demoAuthenticated ? (
+                <div className="mt-4 rounded-control bg-brand-softer p-3 text-sm font-semibold text-brand">
+                  已登录本地演示账户
+                </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('login')}
+                      className="rounded-control px-3 py-3 text-center text-sm font-semibold text-brand hover:bg-brand-softer"
+                    >
+                      登录
+                    </button>
+                  </Dialog.Close>
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('register')}
+                      className="rounded-control bg-brand px-3 py-3 text-center text-sm font-semibold text-white hover:bg-brand-strong"
+                    >
+                      注册
+                    </button>
+                  </Dialog.Close>
+                </div>
+              )}
               <nav className="mt-4 grid gap-1" aria-label="移动导航">
                 {topicNav.slice(0, 10).map((topic) => (
                   <MobileLink key={topic.label} to={topic.to} onClick={() => setOpen(false)}>
@@ -174,7 +194,7 @@ export function TopNav() {
           <DropdownMenu.Trigger asChild>
             <button
               type="button"
-              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-[9px] px-3 text-sm font-medium text-muted hover:bg-surface-muted hover:text-foreground"
+              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-control px-3 text-sm font-medium text-muted hover:bg-surface-muted hover:text-foreground"
             >
               更多
               <ChevronDown aria-hidden="true" size={14} />
@@ -200,7 +220,15 @@ export function TopNav() {
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </nav>
-      <AuthDialog mode={authMode} onOpenChange={(nextOpen) => !nextOpen && setAuthMode(null)} />
+      <AuthDialog
+        mode={authMode}
+        returnFocusRef={desktopLoginRef}
+        onContinue={() => {
+          setDemoAuthenticated(true);
+          setAuthMode(null);
+        }}
+        onOpenChange={(nextOpen) => !nextOpen && setAuthMode(null)}
+      />
     </header>
   );
 }
@@ -208,19 +236,30 @@ export function TopNav() {
 function AuthDialog({
   mode,
   onOpenChange,
+  onContinue,
+  returnFocusRef,
 }: {
   mode: 'login' | 'register' | null;
   onOpenChange: (open: boolean) => void;
+  onContinue: () => void;
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <Dialog.Root open={mode !== null} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[110] bg-overlay" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-[111] w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-panel border border-border bg-surface p-5 shadow-popover">
+        <Dialog.Content
+          onCloseAutoFocus={(event) => {
+            if (!returnFocusRef.current) return;
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }}
+          className="fixed top-1/2 left-1/2 z-[111] w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-panel border border-border bg-surface p-5 shadow-popover"
+        >
           <div className="flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="text-xl font-bold text-foreground">
-                {mode === 'register' ? '创建 ten-IQ 账户' : '登陆 ten-IQ'}
+                {mode === 'register' ? '创建 ten-IQ 演示账户' : '登录 ten-IQ 演示账户'}
               </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted">
                 当前连接到演示账户，不会收集或保存真实身份信息。
@@ -233,16 +272,13 @@ function AuthDialog({
             </Dialog.Close>
           </div>
           <div className="mt-5 grid gap-3">
-            {mode === 'register' ? <Input aria-label="用户名" placeholder="用户名" /> : null}
-            <Input aria-label="邮箱" type="email" placeholder="邮箱地址" />
-            <Dialog.Close asChild>
-              <Link
-                to="/account"
-                className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong"
-              >
-                进入演示账户
-              </Link>
-            </Dialog.Close>
+            <button
+              type="button"
+              onClick={onContinue}
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong"
+            >
+              继续使用本地演示身份
+            </button>
           </div>
           <p className="mt-4 text-xs leading-5 text-muted">
             真实认证、钱包和资金功能需完成独立安全与合规评审后接入。
@@ -273,7 +309,7 @@ function NavLink({
     <Link
       to={to}
       className={cn(
-        'inline-flex h-12 shrink-0 items-center gap-1.5 rounded-[9px] px-2.5 text-sm font-semibold hover:bg-surface-muted hover:text-foreground',
+        'inline-flex h-12 shrink-0 items-center gap-1.5 rounded-control px-2.5 text-sm font-semibold hover:bg-surface-muted hover:text-foreground',
         tone === 'gold' ? 'pm-nav-gold' : tone === 'strong' ? 'text-foreground' : 'text-muted',
       )}
     >

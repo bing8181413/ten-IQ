@@ -101,6 +101,37 @@ export function HowItWorksPage() {
           ))}
         </div>
       </section>
+      <section className="mt-10 grid gap-4 md:grid-cols-2" aria-label="信任与支持">
+        <TrustCard
+          id="demo-data"
+          title="演示数据说明"
+          copy="所有市场、账户、评论与预览均来自项目内版本化 JSON，并由固定时钟和种子生成。它们不代表实时事实。"
+        />
+        <TrustCard
+          id="privacy"
+          title="隐私说明"
+          copy="演示版不收集真实身份、密码、钱包、支付或 KYC 信息；交互状态仅保存在当前浏览器内存中。"
+        />
+        <TrustCard
+          id="terms"
+          title="使用条款"
+          copy="本项目仅用于产品界面和接口演示，不提供投资建议，也不接受资金或执行真实交易。"
+        />
+        <TrustCard
+          id="support"
+          title="服务状态与反馈"
+          copy="当前状态：本地演示服务运行。出现错误时可使用页面内重试；反馈请通过项目 GitHub 仓库提交。"
+        />
+      </section>
     </div>
+  );
+}
+
+function TrustCard({ id, title, copy }: { id: string; title: string; copy: string }) {
+  return (
+    <Card id={id} className="scroll-mt-36 p-5">
+      <h2 className="text-base font-bold text-foreground">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
+    </Card>
   );
 }

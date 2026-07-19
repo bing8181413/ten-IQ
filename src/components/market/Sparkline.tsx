@@ -13,7 +13,17 @@ function buildPath(values: number[], width: number, height: number) {
     })
     .join(' ');
 }
-export function Sparkline({ values, className }: { values: number[]; className?: string }) {
+export function Sparkline({
+  values,
+  className,
+  tone = 'brand',
+  fill = true,
+}: {
+  values: number[];
+  className?: string;
+  tone?: 'brand' | 'negative';
+  fill?: boolean;
+}) {
   const gradientId = useId();
   const width = 160;
   const height = 42;
@@ -32,11 +42,11 @@ export function Sparkline({ values, className }: { values: number[]; className?:
           <stop offset="100%" stopColor="var(--color-brand)" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill={`url(#${gradientId})`} />
+      {fill ? <path d={area} fill={`url(#${gradientId})`} /> : null}
       <path
         d={line}
         fill="none"
-        stroke="var(--color-brand)"
+        stroke={tone === 'brand' ? 'var(--color-brand)' : 'var(--color-negative)'}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

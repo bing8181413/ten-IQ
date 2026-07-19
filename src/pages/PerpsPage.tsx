@@ -1,25 +1,70 @@
 import { useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ArrowDown, ArrowUp, BarChart3, Info } from 'lucide-react';
 import { PerpsPriceChart } from '@/components/trading/PerpsPriceChart';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
 import { Input } from '@/components/ui/Input';
-import { perpsAssets } from '@/data/productPages';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { usePerpsAsset, usePerpsAssets } from '@/hooks/useProductData';
+import { useProductPreview } from '@/hooks/useProductPreview';
 import { cn } from '@/lib/cn';
 
 export function PerpsPage() {
   const { symbol = 'sp500' } = useParams();
-  const asset = perpsAssets.find((item) => item.symbol === symbol);
   const [side, setSide] = useState<'long' | 'short'>('long');
   const [amount, setAmount] = useState('');
   const [range, setRange] = useState('1天');
-  const [previewed, setPreviewed] = useState(false);
+  const previewMutation = useProductPreview();
+  const rangeKey: Record<string, string> = {
+    '1小时': '1h',
+    '4小时': '4h',
+    '1天': '1d',
+    '1周': '1w',
+    '1月': '1m',
+  };
+  const assetsQuery = usePerpsAssets();
+  const assetQuery = usePerpsAsset(symbol, rangeKey[range] ?? '1d');
+  const perpsAssets = assetsQuery.data?.data ?? [];
+  const asset = assetQuery.data?.data;
   const estimated = useMemo(() => (Number(amount) || 0) / (asset?.price ?? 1), [amount, asset]);
-  if (!asset) return <Navigate to="/zh/asset/sp500" replace />;
+  if (assetsQuery.isLoading || assetQuery.isLoading) {
+    return (
+      <div className="pm-shell py-5" role="status" aria-busy="true" aria-label="正在加载永续资产">
+        <Skeleton className="h-16" />
+        <Skeleton className="mt-5 h-[32rem]" />
+      </div>
+    );
+  }
+  if (!assetsQuery.isError && perpsAssets.length === 0) {
+    return (
+      <div className="pm-shell py-8">
+        <EmptyState title="暂无永续资产" description="演示数据当前为空，请稍后重试。" />
+      </div>
+    );
+  }
+  if (assetsQuery.isError || assetQuery.isError || !asset) {
+    return (
+      <div className="pm-shell py-8">
+        <ErrorState
+          onRetry={() => void Promise.all([assetsQuery.refetch(), assetQuery.refetch()])}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="pm-shell py-5 pb-24 md:pb-10">
+      {assetQuery.data?.meta ? (
+        <FreshnessNotice
+          stale={assetQuery.data.meta.stale}
+          updatedAt={assetQuery.data.meta.updatedAt}
+          onRefresh={() => void Promise.all([assetsQuery.refetch(), assetQuery.refetch()])}
+        />
+      ) : null}
       <div
         className="flex scrollbar-none gap-2 overflow-x-auto border-b border-border pb-4"
         aria-label="永续资产"
@@ -110,16 +155,8 @@ export function PerpsPage() {
               <BarChart3 aria-hidden="true" size={17} /> 市场深度
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-5">
-              <DepthSide
-                tone="positive"
-                title="买盘"
-                rows={['7,474.8 · 12.4K', '7,472.1 · 8.7K', '7,469.4 · 6.2K']}
-              />
-              <DepthSide
-                tone="negative"
-                title="卖盘"
-                rows={['7,477.2 · 10.8K', '7,480.6 · 7.1K', '7,484.3 · 5.4K']}
-              />
+              <DepthSide tone="positive" title="买盘" rows={asset.depth.buys} />
+              <DepthSide tone="negative" title="卖盘" rows={asset.depth.sells} />
             </div>
           </Card>
         </section>
@@ -133,7 +170,7 @@ export function PerpsPage() {
                 aria-pressed={side === 'long'}
                 onClick={() => {
                   setSide('long');
-                  setPreviewed(false);
+                  previewMutation.reset();
                 }}
                 className={cn(
                   'h-10 rounded-control text-sm font-semibold',
@@ -150,7 +187,7 @@ export function PerpsPage() {
                 aria-pressed={side === 'short'}
                 onClick={() => {
                   setSide('short');
-                  setPreviewed(false);
+                  previewMutation.reset();
                 }}
                 className={cn(
                   'h-10 rounded-control text-sm font-semibold',
@@ -174,7 +211,7 @@ export function PerpsPage() {
               value={amount}
               onChange={(event) => {
                 setAmount(event.target.value);
-                setPreviewed(false);
+                previewMutation.reset();
               }}
             />
             <div className="mt-4 space-y-2 border-y border-border py-4 text-sm">
@@ -185,17 +222,32 @@ export function PerpsPage() {
             <Button
               className="mt-4"
               fullWidth
-              disabled={(Number(amount) || 0) <= 0}
-              onClick={() => setPreviewed(true)}
+              disabled={(Number(amount) || 0) <= 0 || previewMutation.isPending}
+              onClick={() =>
+                previewMutation.mutate({
+                  kind: 'perps',
+                  symbol: asset.symbol,
+                  side,
+                  amount: Number(amount),
+                })
+              }
             >
-              预览{side === 'long' ? '做多' : '做空'}
+              {previewMutation.isPending
+                ? '正在生成预览…'
+                : `预览${side === 'long' ? '做多' : '做空'}`}
             </Button>
-            {previewed ? (
+            {previewMutation.data ? (
               <p
                 role="status"
                 className="mt-3 rounded-control bg-positive-soft p-3 text-sm font-semibold text-positive"
               >
-                演示永续意图已生成，不会提交资金或订单。
+                {previewMutation.data.data.summary}；预计演示值 $
+                {previewMutation.data.data.estimatedReturn.toFixed(2)}。不会提交资金或订单。
+              </p>
+            ) : null}
+            {previewMutation.isError ? (
+              <p role="alert" className="mt-3 text-sm text-negative">
+                {previewMutation.error.message}
               </p>
             ) : null}
             <p className="mt-4 flex gap-2 text-xs leading-5 text-muted">
@@ -232,7 +284,7 @@ function DepthSide({
 }: {
   tone: 'positive' | 'negative';
   title: string;
-  rows: string[];
+  rows: { price: number; size: number }[];
 }) {
   return (
     <div>
@@ -247,10 +299,10 @@ function DepthSide({
       <div className="mt-2 space-y-2">
         {rows.map((row) => (
           <div
-            key={row}
+            key={`${row.price}-${row.size}`}
             className="rounded-control bg-surface-muted px-3 py-2 text-right text-xs font-semibold text-foreground tabular-nums"
           >
-            {row}
+            {row.price.toLocaleString('en-US')} · {row.size.toLocaleString('en-US')}
           </div>
         ))}
       </div>

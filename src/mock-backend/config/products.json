@@ -1,0 +1,247 @@
+{
+  "sports": {
+    "leagues": ["全部", "世界杯", "MLB", "网球", "WNBA", "电竞", "高尔夫", "F1 赛车", "板球"],
+    "events": [
+      {
+        "id": "spain-argentina",
+        "mode": "live",
+        "league": "世界杯",
+        "status": "下半场 · 72′",
+        "volume": "$4.2M",
+        "home": { "name": "西班牙", "short": "ESP", "score": "1", "price": 60 },
+        "away": { "name": "阿根廷", "short": "ARG", "score": "1", "price": 41 },
+        "spread": ["ESP -1.5 44¢", "ARG +1.5 65¢"],
+        "total": ["大 2.5 53¢", "小 2.5 50¢"]
+      },
+      {
+        "id": "braves-white-sox",
+        "mode": "live",
+        "league": "MLB",
+        "status": "5局上",
+        "volume": "$784K",
+        "home": { "name": "Braves", "short": "ATL", "score": "0", "price": 54 },
+        "away": { "name": "White Sox", "short": "CWS", "score": "0", "price": 48 },
+        "spread": ["ATL +1.5 70¢", "CWS -1.5 44¢"],
+        "total": ["大 8.5 53¢", "小 8.5 50¢"]
+      },
+      {
+        "id": "galan-piros",
+        "mode": "live",
+        "league": "网球",
+        "status": "第2盘",
+        "volume": "$119K",
+        "home": { "name": "D. Galan", "short": "GAL", "score": "6 3", "price": 55 },
+        "away": { "name": "Z. Piros", "short": "PIR", "score": "2 4", "price": 46 },
+        "spread": ["GAL +1.5 55¢", "PIR -1.5 87¢"],
+        "total": ["大 23.5 98¢", "小 23.5 99¢"]
+      },
+      {
+        "id": "liberty-aces",
+        "mode": "futures",
+        "league": "WNBA",
+        "status": "今晚 8:00",
+        "volume": "$326K",
+        "home": { "name": "Liberty", "short": "NYL", "score": "-", "price": 57 },
+        "away": { "name": "Aces", "short": "LVA", "score": "-", "price": 45 },
+        "spread": ["NYL -2.5 51¢", "LVA +2.5 52¢"],
+        "total": ["大 168.5 48¢", "小 168.5 55¢"]
+      }
+    ]
+  },
+  "combos": [
+    {
+      "id": "esp",
+      "eventId": "spain-argentina",
+      "selection": "ESP 60¢",
+      "league": "世界杯",
+      "title": "西班牙 vs 阿根廷",
+      "outcome": "西班牙",
+      "probability": 60
+    },
+    {
+      "id": "atl",
+      "eventId": "braves-white-sox",
+      "selection": "ATL 54¢",
+      "league": "MLB",
+      "title": "Braves vs White Sox",
+      "outcome": "Braves",
+      "probability": 54
+    },
+    {
+      "id": "gal",
+      "eventId": "galan-piros",
+      "selection": "GAL 55¢",
+      "league": "网球",
+      "title": "D. Galan vs Z. Piros",
+      "outcome": "D. Galan",
+      "probability": 55
+    },
+    {
+      "id": "nyl",
+      "eventId": "liberty-aces",
+      "selection": "NYL 57¢",
+      "league": "WNBA",
+      "title": "Liberty vs Aces",
+      "outcome": "Liberty",
+      "probability": 57
+    }
+  ],
+  "perps": [
+    {
+      "symbol": "sp500",
+      "name": "SP500-USD",
+      "icon": "chart",
+      "price": 7475.9,
+      "change": 0.42,
+      "high": "7,502.2",
+      "low": "7,421.6",
+      "volume": "$186.4M",
+      "values": [7410, 7428, 7418, 7442, 7436, 7460, 7449, 7472, 7464, 7475.9],
+      "depth": {
+        "buys": [
+          { "price": 7474.8, "size": 12400 },
+          { "price": 7472.1, "size": 8700 },
+          { "price": 7469.4, "size": 6200 }
+        ],
+        "sells": [
+          { "price": 7477.2, "size": 10800 },
+          { "price": 7480.6, "size": 7100 },
+          { "price": 7484.3, "size": 5400 }
+        ]
+      }
+    },
+    {
+      "symbol": "btc",
+      "name": "BTC-USD",
+      "icon": "bitcoin",
+      "price": 65842.7,
+      "change": 1.28,
+      "high": "66,214.0",
+      "low": "64,780.4",
+      "volume": "$432.8M",
+      "values": [64200, 64780, 64520, 65110, 64940, 65480, 65220, 65910, 65620, 65842.7],
+      "depth": {
+        "buys": [
+          { "price": 65830.2, "size": 18.4 },
+          { "price": 65812.9, "size": 11.2 },
+          { "price": 65788.5, "size": 8.6 }
+        ],
+        "sells": [
+          { "price": 65855.4, "size": 14.8 },
+          { "price": 65870.1, "size": 9.7 },
+          { "price": 65902.6, "size": 7.3 }
+        ]
+      }
+    },
+    {
+      "symbol": "eth",
+      "name": "ETH-USD",
+      "icon": "diamond",
+      "price": 1894.2,
+      "change": 0.59,
+      "high": "1,912.8",
+      "low": "1,861.3",
+      "volume": "$118.2M",
+      "values": [1854, 1862, 1858, 1874, 1868, 1882, 1878, 1897, 1888, 1894.2],
+      "depth": {
+        "buys": [
+          { "price": 1893.8, "size": 420 },
+          { "price": 1892.9, "size": 315 },
+          { "price": 1891.7, "size": 208 }
+        ],
+        "sells": [
+          { "price": 1894.7, "size": 386 },
+          { "price": 1895.6, "size": 274 },
+          { "price": 1896.8, "size": 193 }
+        ]
+      }
+    },
+    {
+      "symbol": "sol",
+      "name": "SOL-USD",
+      "icon": "waves",
+      "price": 82.16,
+      "change": -0.31,
+      "high": "83.40",
+      "low": "80.72",
+      "volume": "$46.7M",
+      "values": [81.2, 82.1, 81.8, 82.6, 83.1, 82.8, 82.3, 82.7, 81.9, 82.16],
+      "depth": {
+        "buys": [
+          { "price": 82.11, "size": 1820 },
+          { "price": 82.04, "size": 1410 },
+          { "price": 81.96, "size": 970 }
+        ],
+        "sells": [
+          { "price": 82.21, "size": 1640 },
+          { "price": 82.29, "size": 1180 },
+          { "price": 82.36, "size": 840 }
+        ]
+      }
+    }
+  ],
+  "community": {
+    "leaderboard": {
+      "today": [
+        ["MacroPilot", "+$8,240", "67%"],
+        ["SignalRoom", "+$7,910", "63%"],
+        ["DataFirst", "+$6,480", "65%"]
+      ],
+      "week": [
+        ["MacroPilot", "+$42,680", "68%"],
+        ["SignalRoom", "+$36,210", "64%"],
+        ["EventHorizon", "+$28,940", "71%"],
+        ["DataFirst", "+$21,605", "62%"],
+        ["QuietAlpha", "+$18,320", "66%"]
+      ],
+      "month": [
+        ["EventHorizon", "+$184,300", "70%"],
+        ["MacroPilot", "+$171,420", "66%"],
+        ["QuietAlpha", "+$139,870", "68%"]
+      ]
+    },
+    "activity": {
+      "today": [
+        ["世界杯冠军", "西班牙概率升至 21%", "刚刚"],
+        ["BTC 价格", "“是”方向 24 小时上升 3.2%", "4 分钟前"]
+      ],
+      "week": [
+        ["全球利率", "新增 18 个演示观点", "18 分钟前"],
+        ["火星货运", "结算来源说明已更新", "1 小时前"]
+      ],
+      "month": [
+        ["模型基准", "月度校准数据已更新", "2 天前"],
+        ["全球气温", "新增年度来源说明", "5 天前"]
+      ]
+    },
+    "accuracy": {
+      "today": {
+        "score": 0.091,
+        "buckets": [
+          ["20–40%", "29%", 29],
+          ["40–60%", "49%", 49],
+          ["60–80%", "69%", 69],
+          ["80–100%", "89%", 89]
+        ]
+      },
+      "week": {
+        "score": 0.084,
+        "buckets": [
+          ["20–40%", "31%", 31],
+          ["40–60%", "52%", 52],
+          ["60–80%", "71%", 71],
+          ["80–100%", "91%", 91]
+        ]
+      },
+      "month": {
+        "score": 0.079,
+        "buckets": [
+          ["20–40%", "33%", 33],
+          ["40–60%", "51%", 51],
+          ["60–80%", "73%", 73],
+          ["80–100%", "92%", 92]
+        ]
+      }
+    }
+  }
+}

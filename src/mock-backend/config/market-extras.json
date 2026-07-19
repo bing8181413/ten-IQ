@@ -1,0 +1,18 @@
+{
+  "comments": [
+    {
+      "id": "comment-world-cup-1",
+      "marketId": "mkt-world-cup-2026",
+      "author": "ten-IQ 研究员",
+      "text": "关注结算来源和截止日期，再判断当前概率是否合理。",
+      "createdAt": "2026-07-20T00:00:00.000Z"
+    },
+    {
+      "id": "comment-btc-1",
+      "marketId": "mkt-btc-150k",
+      "author": "数据观察员",
+      "text": "价格目标市场波动较大，演示概率不代表投资建议。",
+      "createdAt": "2026-07-19T20:00:00.000Z"
+    }
+  ]
+}

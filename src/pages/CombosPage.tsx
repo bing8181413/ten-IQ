@@ -2,14 +2,21 @@ import { useMemo, useState } from 'react';
 import { Check, Layers3, Minus, Plus, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { Input } from '@/components/ui/Input';
-import { comboLegs } from '@/data/productPages';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { FreshnessNotice } from '@/components/ui/FreshnessNotice';
+import { useComboLegs } from '@/hooks/useProductData';
+import { useProductPreview } from '@/hooks/useProductPreview';
 import { cn } from '@/lib/cn';
 
 export function CombosPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>(['esp', 'atl']);
   const [amount, setAmount] = useState('10');
-  const [previewed, setPreviewed] = useState(false);
+  const previewMutation = useProductPreview();
+  const comboQuery = useComboLegs();
+  const comboLegs = comboQuery.data?.data ?? [];
   const selected = comboLegs.filter((leg) => selectedIds.includes(leg.id));
   const combinedProbability = useMemo(
     () => selected.reduce((value, leg) => value * (leg.probability / 100), 1) * 100,
@@ -19,9 +26,13 @@ export function CombosPage() {
   const amountValue = Number(amount) || 0;
 
   function toggle(id: string) {
-    setPreviewed(false);
+    previewMutation.reset();
     setSelectedIds((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : current.length >= 4
+          ? current
+          : [...current, id],
     );
   }
 
@@ -39,51 +50,74 @@ export function CombosPage() {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="min-w-0" aria-labelledby="combo-options-title">
+          {comboQuery.data?.meta ? (
+            <FreshnessNotice
+              stale={comboQuery.data.meta.stale}
+              updatedAt={comboQuery.data.meta.updatedAt}
+              onRefresh={() => void comboQuery.refetch()}
+            />
+          ) : null}
           <div className="flex items-center justify-between gap-3">
             <h2 id="combo-options-title" className="text-lg font-bold text-foreground">
               选择组合项
             </h2>
             <span className="text-xs font-semibold text-muted">已选择 {selected.length} / 4</span>
           </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {comboLegs.map((leg) => {
-              const active = selectedIds.includes(leg.id);
-              return (
-                <Card key={leg.id} className={cn('p-4', active && 'border-brand')}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <span className="text-xs font-semibold text-muted">{leg.league}</span>
-                      <h3 className="mt-1 text-sm font-semibold text-foreground">{leg.title}</h3>
+          {comboQuery.isLoading ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2" aria-busy="true">
+              {Array.from({ length: 4 }, (_, index) => (
+                <Skeleton key={index} className="h-36" />
+              ))}
+            </div>
+          ) : comboQuery.isError ? (
+            <ErrorState onRetry={() => void comboQuery.refetch()} />
+          ) : comboLegs.length === 0 ? (
+            <EmptyState title="暂无可组合项目" description="稍后重试或返回体育盘口。" />
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {comboLegs.map((leg) => {
+                const active = selectedIds.includes(leg.id);
+                const disabled = !active && selectedIds.length >= 4;
+                return (
+                  <Card key={leg.id} className={cn('p-4', active && 'border-brand')}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-semibold text-muted">{leg.league}</span>
+                        <h3 className="mt-1 text-sm font-semibold text-foreground">{leg.title}</h3>
+                      </div>
+                      <span className="text-xl font-bold text-foreground tabular-nums">
+                        {leg.probability}%
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-foreground tabular-nums">
-                      {leg.probability}%
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => toggle(leg.id)}
-                    className={cn(
-                      'mt-4 flex h-10 w-full items-center justify-between rounded-control px-3 text-sm font-semibold',
-                      active ? 'bg-brand-soft text-brand' : 'bg-surface-muted text-foreground',
-                    )}
-                  >
-                    <span>{leg.outcome}</span>
-                    {active ? (
-                      <Check aria-hidden="true" size={16} />
-                    ) : (
-                      <Plus aria-hidden="true" size={16} />
-                    )}
-                  </button>
-                </Card>
-              );
-            })}
-          </div>
+                    <button
+                      type="button"
+                      aria-pressed={active}
+                      disabled={disabled}
+                      onClick={() => toggle(leg.id)}
+                      className={cn(
+                        'mt-4 flex h-10 w-full items-center justify-between rounded-control px-3 text-sm font-semibold',
+                        active
+                          ? 'bg-brand-soft text-brand'
+                          : 'bg-surface-muted text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                      )}
+                    >
+                      <span>{leg.outcome}</span>
+                      {active ? (
+                        <Check aria-hidden="true" size={16} />
+                      ) : (
+                        <Plus aria-hidden="true" size={16} />
+                      )}
+                    </button>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
           <Card className="mt-5 border-warning bg-warning-soft p-4">
             <div className="flex gap-3">
               <ShieldAlert aria-hidden="true" size={18} className="mt-0.5 shrink-0 text-warning" />
               <p className="text-sm leading-6 text-warning">
-                组合风险高于单项预测，任一结果不成立会使整个组合失败。此页面不构成收益承诺。
+                组合风险高于单项预测，任一结果不成立会使整个组合失败。显示概率按各项独立估算，未建模事件相关性，也不构成收益承诺。
               </p>
             </div>
           </Card>
@@ -122,7 +156,7 @@ export function CombosPage() {
               ) : null}
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 border-y border-border py-4">
-              <ComboStat label="组合概率" value={`${combinedProbability.toFixed(1)}%`} />
+              <ComboStat label="独立概率估算" value={`${combinedProbability.toFixed(1)}%`} />
               <ComboStat label="预估倍数" value={`${multiplier.toFixed(2)}x`} />
             </div>
             <label className="mt-4 block text-xs font-semibold text-muted" htmlFor="combo-amount">
@@ -135,7 +169,7 @@ export function CombosPage() {
               value={amount}
               onChange={(event) => {
                 setAmount(event.target.value);
-                setPreviewed(false);
+                previewMutation.reset();
               }}
             />
             <div className="mt-3 flex items-center justify-between text-sm">
@@ -147,17 +181,25 @@ export function CombosPage() {
             <Button
               className="mt-4"
               fullWidth
-              disabled={selected.length < 2 || amountValue <= 0}
-              onClick={() => setPreviewed(true)}
+              disabled={selected.length < 2 || amountValue <= 0 || previewMutation.isPending}
+              onClick={() =>
+                previewMutation.mutate({ kind: 'combo', legIds: selectedIds, amount: amountValue })
+              }
             >
-              预览组合
+              {previewMutation.isPending ? '正在生成预览…' : '预览组合'}
             </Button>
-            {previewed ? (
+            {previewMutation.data ? (
               <p
                 role="status"
                 className="mt-3 rounded-control bg-positive-soft p-3 text-sm font-semibold text-positive"
               >
-                演示组合已生成，不会提交真实订单。
+                {previewMutation.data.data.summary}；预计演示返回 $
+                {previewMutation.data.data.estimatedReturn.toFixed(2)}。不会提交真实订单。
+              </p>
+            ) : null}
+            {previewMutation.isError ? (
+              <p role="alert" className="mt-3 text-sm text-negative">
+                {previewMutation.error.message}
               </p>
             ) : null}
           </Card>

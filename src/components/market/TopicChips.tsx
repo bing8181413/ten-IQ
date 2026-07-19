@@ -2,17 +2,20 @@ import { cn } from '@/lib/cn';
 export const marketCategories = [
   '全部',
   '特朗普',
-  '2026年NHL选秀',
-  '和平协议',
-  '6月30日小学',
-  '英国劳工领导力',
-  '罗马尼亚政府',
+  '伊朗',
+  '空气质量',
+  '以色列选举',
+  'Moonshot',
+  '奥德赛号',
+  'NBA休赛期',
+  '古巴',
+  'AI',
   '美联储',
-  'nba free agency',
-  'GTA VI',
-  'SpaceX',
-  '足球转会',
-  'Claude Mythos',
+  '和平协议',
+  '7月21日小学',
+  'Tweet Markets',
+  '每日温度',
+  '油',
 ];
 export function TopicChips({
   value,
@@ -41,7 +44,7 @@ export function TopicChips({
             aria-pressed={active}
             onClick={() => onChange(category)}
             className={cn(
-              'min-h-8 shrink-0 rounded-[6px] px-3 text-sm font-medium transition-colors',
+              'min-h-8 shrink-0 rounded-control px-3 text-sm font-medium transition-colors',
               active
                 ? 'bg-brand-soft text-brand'
                 : 'text-muted hover:bg-surface-muted hover:text-foreground',

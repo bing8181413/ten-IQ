@@ -1,0 +1,11 @@
+{
+  "configVersion": 1,
+  "datasetVersion": "2026-07-20.1",
+  "seed": 8181413,
+  "fixedNow": "2026-07-20T00:00:00.000Z",
+  "locale": "zh-CN",
+  "currency": "USD",
+  "defaultScenario": "success",
+  "latencyMs": { "min": 80, "max": 220 },
+  "pageSize": 12
+}

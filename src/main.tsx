@@ -7,7 +7,14 @@ async function enableMocking() {
   if (import.meta.env.PROD && import.meta.env.VITE_USE_MOCKS !== 'true') return;
   const { worker } = await import('@/mocks/browser');
   return worker.start({
-    onUnhandledRequest: 'bypass',
+    onUnhandledRequest(request, print) {
+      const url = new URL(request.url);
+      if (url.pathname.startsWith('/api/')) {
+        print.error();
+        return;
+      }
+      print.warning();
+    },
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
   });
 }

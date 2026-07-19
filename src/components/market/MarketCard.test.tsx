@@ -15,7 +15,8 @@ describe('MarketCard', () => {
     );
     expect(screen.getByRole('link', { name: market.title })).toBeInTheDocument();
     expect(screen.getByText(/交易量/)).toBeInTheDocument();
-    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.getAllByRole('button')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: /收藏/ })).toBeDisabled();
   });
   it('reports selected outcome', async () => {
     const onSelect = vi.fn();
