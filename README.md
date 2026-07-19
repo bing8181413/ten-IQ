@@ -2,6 +2,8 @@
 
 一个可直接运行、由 Agent 规则约束的预测市场前端脚手架。视觉语言参考现代预测市场产品的共同模式：紧凑、数据密集、卡片化、概率优先、低装饰。项目使用自有品牌和 Token，不复制第三方商标、Logo 或专有素材。
 
+在线演示：[https://bing8181413.github.io/ten-IQ/](https://bing8181413.github.io/ten-IQ/)
+
 ## 你以后怎么提需求
 
 进入仓库后，直接告诉 Codex / Claude / Cursor：
@@ -85,6 +87,12 @@ pnpm run test:visual:update  # 仅在设计变更被批准后
 ```
 
 `quality` 包括格式、Lint、类型、单元测试、设计契约和生产构建。
+
+## GitHub Pages 发布
+
+推送到 `main` 后，`.github/workflows/pages.yml` 会自动构建演示模式并发布到 GitHub Pages。项目部署在 `/ten-IQ/` 子路径，工作流同时生成 SPA 回退页，因此站内路由可以直接访问和刷新。
+
+若仓库尚未启用 Pages，请在 GitHub 的 **Settings → Pages → Build and deployment** 中选择 **GitHub Actions**。
 
 ## 目录
 

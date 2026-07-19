@@ -40,35 +40,38 @@ function Loading() {
     </div>
   );
 }
-const router = createBrowserRouter([
-  {
-    element: <AppShell />,
-    children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/zh', element: <HomePage /> },
-      { path: '/zh/predictions', element: <PredictionsPage /> },
-      { path: '/zh/predictions/combine', element: <CombosPage /> },
-      { path: '/zh/combo', element: <CombosPage /> },
-      { path: '/zh/combos', element: <CombosPage /> },
-      { path: '/zh/sports', element: <SportsPage /> },
-      { path: '/zh/sports/live', element: <SportsPage /> },
-      { path: '/zh/sports/futures', element: <SportsPage /> },
-      { path: '/zh/asset/:symbol', element: <PerpsPage /> },
-      { path: '/zh/how-it-works', element: <HowItWorksPage /> },
-      { path: '/zh/leaderboard', element: <CommunityPage view="leaderboard" /> },
-      { path: '/zh/accuracy', element: <CommunityPage view="accuracy" /> },
-      { path: '/zh/activity', element: <CommunityPage view="activity" /> },
-      { path: '/zh/:section/:subsection', element: <HomePage /> },
-      { path: '/zh/:section', element: <HomePage /> },
-      { path: '/markets/:slug', element: <MarketDetailPage /> },
-      { path: '/zh/event/:slug', element: <MarketDetailPage /> },
-      { path: '/account', element: <AccountPage /> },
-      { path: '/zh/account', element: <AccountPage /> },
-      { path: '/zh/portfolio', element: <AccountPage /> },
-      { path: '*', element: <NotFoundPage /> },
-    ],
-  },
-]);
+const router = createBrowserRouter(
+  [
+    {
+      element: <AppShell />,
+      children: [
+        { path: '/', element: <HomePage /> },
+        { path: '/zh', element: <HomePage /> },
+        { path: '/zh/predictions', element: <PredictionsPage /> },
+        { path: '/zh/predictions/combine', element: <CombosPage /> },
+        { path: '/zh/combo', element: <CombosPage /> },
+        { path: '/zh/combos', element: <CombosPage /> },
+        { path: '/zh/sports', element: <SportsPage /> },
+        { path: '/zh/sports/live', element: <SportsPage /> },
+        { path: '/zh/sports/futures', element: <SportsPage /> },
+        { path: '/zh/asset/:symbol', element: <PerpsPage /> },
+        { path: '/zh/how-it-works', element: <HowItWorksPage /> },
+        { path: '/zh/leaderboard', element: <CommunityPage view="leaderboard" /> },
+        { path: '/zh/accuracy', element: <CommunityPage view="accuracy" /> },
+        { path: '/zh/activity', element: <CommunityPage view="activity" /> },
+        { path: '/zh/:section/:subsection', element: <HomePage /> },
+        { path: '/zh/:section', element: <HomePage /> },
+        { path: '/markets/:slug', element: <MarketDetailPage /> },
+        { path: '/zh/event/:slug', element: <MarketDetailPage /> },
+        { path: '/account', element: <AccountPage /> },
+        { path: '/zh/account', element: <AccountPage /> },
+        { path: '/zh/portfolio', element: <AccountPage /> },
+        { path: '*', element: <NotFoundPage /> },
+      ],
+    },
+  ],
+  { basename: import.meta.env.BASE_URL },
+);
 export function App() {
   return (
     <Suspense fallback={<Loading />}>
